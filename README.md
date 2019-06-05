@@ -2,7 +2,7 @@
 
 use illmy\Yhlicense\Yhlicense;
 
-$license = new Yhlicense('我的车牌号是月A一二西尔克司s,桂阳的贵',['pattern' => ['西','尔克司'],'replacement' => ['C','X']]);
+$license = new Yhlicense('哈哈，我的车牌号是月A一二哈哈西尔克司s,桂阳的贵',['pattern' => ['西','尔克司'],'replacement' => ['C','X']],['哈','逗']);
 $data = $license->filterLicense();
 
 var_dump($data);
