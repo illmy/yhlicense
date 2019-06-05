@@ -3,8 +3,7 @@
     "description": "check license",
     "require": {
         "php": ">=7.0",
-        "yurunsoft/chinese-util": "dev-master",
-        "illmy/yhlicense": "dev-master"
+        "yurunsoft/chinese-util": "dev-master"
     },
     "license": "MIT",
     "authors": [
