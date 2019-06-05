@@ -26,7 +26,7 @@ class Yhlicense
 
     //查找词 替换对应词
     protected $findSpeech = [
-        ['find' => '贵州|昂贵','replace' => '贵'],
+        ['find' => '贵州|昂贵|贵阳','replace' => '贵'],
         ['find' => '桂圆','replace' => '桂']
     ];
 
@@ -75,7 +75,7 @@ class Yhlicense
             $this->replaceSpeech['replacement'] = array_merge($this->replaceSpeech['replacement'],$replaceSpeech['replacement']);
         }
         $this->filterSpeech = $filterSpeech;
-        $this->findSpeech = $findSpeech;
+        $this->findSpeech = $findSpeech ? : $this->findSpeech;
     }
 
     public function filterLicense()
@@ -91,6 +91,7 @@ class Yhlicense
 
     protected function replaceSpeech()
     {
+        $this->replaceSpeech['pattern'] = array_map(function($v){ return '/'.$v.'/'; },$this->replaceSpeech['pattern']);
         $this->filterStr = preg_replace($this->replaceSpeech['pattern'],$this->replaceSpeech['replacement'],$this->filterStr);
     }
 
@@ -101,14 +102,14 @@ class Yhlicense
 
     protected function lowerToUpper()
     {
-        $this->filterStr = strtoupper($this->filterStr);
+        $this->selectNumber = strtoupper($this->selectNumber);
     }
 
     protected function pregLicense()
     {
-        $pattern = '#(([\x{4e00}-\x{9fa5}])([A-Za-z0-9]{6,7})#';
-        if (preg_match($pattern,$this->fitlerStr,$match)) {
-            $this->fitlerStr = $match[1];
+        $pattern = '/(([\x{4e00}-\x{9fa5}])([A-Za-z0-9]{6,7}))/u';
+        if (preg_match($pattern,$this->filterStr,$match)) {
+            $this->filterStr = $match[1];
             $this->pcode = $match[2];
             $this->selectNumber = $match[3];
         }
@@ -116,6 +117,9 @@ class Yhlicense
 
     protected function toPinyin()
     {
+        if (empty($this->pcode)) {
+            return true;
+        }
         //匹配汉字
         $hanzi = array_values($this->provinceCode);
         $hanziarray = [];
@@ -137,7 +141,7 @@ class Yhlicense
                     }    
                 }
             } else {
-                if ($val == $this->pcode) {
+                if ($value == $this->pcode) {
                     $this->selectProvice = $this->pcode;
                     break;
                 }
@@ -146,11 +150,11 @@ class Yhlicense
         if (!empty($this->selectProvice)) {
             return true;
         }
-        $pinyin = Chinese::toPinyin($this->pcode, Pinyin::CONVERT_MODE_PINYIN);
+        $pinyin = Chinese::toPinyin($this->pcode, Pinyin::CONVERT_MODE_PINYIN)['pinyin'][0][0];
         if (isset($this->provinceCode[$pinyin])) {
             $code = $this->provinceCode[$pinyin];
             if (is_array($code)) {
-                $sound = Chinese::toPinyin($string, Pinyin::CONVERT_MODE_PINYIN_SOUND_NUMBER);
+                $sound = substr(Chinese::toPinyin($this->pcode, Pinyin::CONVERT_MODE_PINYIN_SOUND_NUMBER)['pinyinSoundNumber'][0][0],-1);
                 if (isset($code[$sound])) {
                     $this->selectProvice = is_array($code[$sound]) ? $code[$sound][0] : $code[$sound];
                 }
@@ -167,9 +171,25 @@ class Yhlicense
      */
     protected function findSpeech()
     {
+        if (empty($this->initStr)) return true;
+        $pinyin = Chinese::toPinyin($this->initStr, Pinyin::CONVERT_MODE_PINYIN,'');
+        if (empty($pinyin['pinyin'][0])) return true;
+        $pinyin = $pinyin['pinyin'][0];
         foreach ($this->findSpeech as $value) {
-            if (preg_match($value['find'],$this->initStr)) {
+            if (empty($value['find'])) continue;
+            if (preg_match('/'.$value['find'].'/',$this->initStr)) {
                 $this->selectProvice = $value['replace'];
+                break;
+            } else {
+                $yin = Chinese::toPinyin($value['find'], Pinyin::CONVERT_MODE_PINYIN,'');
+                if (empty($yin['pinyin'][0])) {
+                    continue;
+                }
+                $pattern = '/'.$yin['pinyin'][0].'/';
+                if (preg_match($pattern,$pinyin)) {
+                    $this->selectProvice = $value['replace'];
+                    break;
+                }    
             }
         }
     }
