@@ -97,7 +97,8 @@ class Yhlicense
 
     protected function filterSpeech()
     {
-        $this->filterStr = preg_replace($this->filterSpeech,'',$this->filterStr);
+        $filterSpeech = array_map(function($v){ return '/'.$v.'/'; },$this->filterSpeech);
+        $this->filterStr = preg_replace($filterSpeech,'',$this->filterStr);
     }
 
     protected function lowerToUpper()
